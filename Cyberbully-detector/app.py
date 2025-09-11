@@ -55,41 +55,24 @@ toxic_model = pipeline("text-classification", model="unitary/toxic-bert")
 # --- Utility: Process a comment ---
 def process_comment(comment):
     text = comment.lower()
-    # Check for keywords
     bad_flags = [word for word in BAD_WORDS if word in text]
-
-    # Run models
     detox_scores = detoxify_model.predict(text)
     detox_top = max(detox_scores, key=detox_scores.get)
     detox_conf = float(detox_scores[detox_top])
 
-    toxic_result = toxic_model(text)[0]
-    bert_label = toxic_result["label"]
-    bert_conf = float(toxic_result["score"])
-
-    # Decide status
-    if bad_flags:
+    if bad_flags or detox_conf > 0.7:
         status = "flagged"
-        decision_source = "bad-words"
-    elif bert_label == "toxic" and bert_conf > 0.7:
-        status = "flagged"
-        decision_source = "toxic-bert"
-    elif detox_conf > 0.7:
-        status = "flagged"
-        decision_source = "detoxify"
+        reason = "bad words" if bad_flags else "detoxify"
     else:
-        status = "clean"
-        decision_source = "none"
+        status = "safe"
+        reason = None
 
     return {
         "status": status,
-        "decision_source": decision_source,
-        "bad_word_flags": bad_flags,
-        "bert_label": bert_label,
-        "bert_confidence": round(bert_conf, 3),
-        "detoxify_top": detox_top,
-        "detoxify_confidence": round(detox_conf, 3),
-        "detoxify_scores": {k: round(v, 3) for k, v in detox_scores.items()}
+        "reason": reason,
+        "bad_flags": bad_flags,
+        "detox_top": detox_top,
+        "detox_confidence": round(detox_conf, 3)
     }
 
 # --- Routes ---
@@ -225,4 +208,5 @@ def chatbot_page():
 # --- Run ---
 if __name__ == "__main__":
     app.run(debug=True, threaded=True)
+
 
