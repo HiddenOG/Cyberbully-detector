@@ -13,7 +13,7 @@ Cyberbully-detector/        #folder
 │   ├─ style.css
 │   └─ uploads/             # Empty folder, Flask will save uploads here
 
-# CyberShield - Cyberbullying & Terrorism Detector
+# CyberShield - Cyberbullying & Terrorism Detector By Favour Aghogho
 
 ## Overview
 Cybershield is a Flask web application that detects harmful comments online. 
@@ -23,9 +23,9 @@ It uses:
 - Custom word lists for terrorism-related and racist content.
 
 The app includes:
-- Paste page to check comments.
+- Paste page to check comments.(User copies and paste the comments to see if its toxic or not)
 - Mini social feed where posts and comments are flagged.
-- Live monitoring feed.
+- Live monitoring feed.(monitors the activities of comments publicly to make sure harmful comments are flagged live)
 - Recommended actions page.
 
 ---
