@@ -52,7 +52,7 @@ BAD_WORDS = ["stupid", "idiot", "dumb", "fuck", "shit", "bitch", "loser", "moron
 detoxify_model = Detoxify('original')
 toxic_model = pipeline("text-classification", model="unitary/toxic-bert")
 
-# --- Utility: Process a comment ---
+
 def process_comment(comment):
     text = comment.lower()
     bad_flags = [word for word in BAD_WORDS if word in text]
@@ -74,7 +74,6 @@ def process_comment(comment):
         "detox_top": detox_top,
         "detox_confidence": round(detox_conf, 3)
     }
-
 # --- Routes ---
 
 @app.route("/")
@@ -121,11 +120,12 @@ def facebook_page():
             "result": result
         }
         posts.append(post)
+
+        # If flagged, you could send a message back (e.g., flash or alert)
         return redirect(url_for("facebook_page"))
 
     return render_template("facebook.html", posts=posts)
 
-# Add comment to a post
 @app.route("/facebook/comment/<int:post_id>", methods=["POST"])
 def add_comment(post_id):
     author = request.form.get("author", "Anonymous")
@@ -141,7 +141,7 @@ def add_comment(post_id):
             break
     return redirect(url_for("facebook_page"))
 
-# Like / Share
+# --- Likes / Shares ---
 @app.route("/facebook/like/<int:post_id>")
 def like_post(post_id):
     for post in posts:
@@ -158,7 +158,7 @@ def share_post(post_id):
             break
     return redirect(url_for("facebook_page"))
 
-# Live Feed (SSE)
+# --- Live Feed SSE ---
 @app.route("/facebook/stream")
 def facebook_stream():
     def event_stream():
@@ -171,7 +171,6 @@ def facebook_stream():
                     yield f"data: {json.dumps({'type':'post','post':p})}\n\n"
                 last_index = len(posts)
                 last_comments_len.extend([0]*(len(posts)-len(last_comments_len)))
-
             # New comments
             for i, p in enumerate(posts):
                 if len(p["comments"]) > last_comments_len[i]:
@@ -181,32 +180,30 @@ def facebook_stream():
             time.sleep(1)
     return Response(event_stream(), mimetype="text/event-stream")
 
-# Live Feed Page
+# --- Feed Page ---
 @app.route("/facebook/live")
 def feed_page():
     return render_template("feed.html")
 
-# Actions Page
+# --- Actions Page ---
 @app.route("/actions")
 def actions_page():
     return render_template("actions.html")
 
-# Chatbot
+# --- Chatbot Page ---
 @app.route("/chatbot", methods=["GET","POST"])
 def chatbot_page():
-    if request.method == "GET":
+    if request.method=="GET":
         return render_template("chatbot.html")
-    
     data = request.get_json()
-    msg = data.get("message", "")
+    msg = data.get("message","")
     result = process_comment(msg)
     flagged = result["status"] == "flagged"
-
-    bot_reply = "⚠ Warning: Your message may contain harmful content." if flagged else "Message is safe."
+    if flagged:
+        bot_reply = "⚠ Warning: Your message may contain harmful content."
+    else:
+        bot_reply = "Message is safe."
     return jsonify({"reply": bot_reply, "flagged": flagged})
 
-# --- Run ---
-if __name__ == "__main__":
+if __name__=="__main__":
     app.run(debug=True, threaded=True)
-
-
